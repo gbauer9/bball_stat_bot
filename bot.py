@@ -16,11 +16,11 @@ def makeReply(player_name, stats, comment):
 if __name__ == "__main__":
     while True:
         reddit = praw.Reddit(
-        client_id = "g-6aGMnmwz60b8Eq3xi2iQ",
-        client_secret = "ynPerVObIr8qsefIgVUsbQyTflCQ8A",
+        client_id = "",
+        client_secret = "",
         user_agent = "python:com.example.bball_stat_bot:v0.1 (by u/canned_food)",
         username = "bball_stat_bot",
-        password = "FBu$&Srb8j$sQ.c"
+        password = ""
         )
 
         for mention in reddit.inbox.mentions():
