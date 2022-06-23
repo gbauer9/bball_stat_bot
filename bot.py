@@ -1,6 +1,5 @@
-import praw
+import praw, yaml 
 from basketball_reference_scraper.players import get_stats
-from basketball_reference_scraper.teams import get_team_stats
 
 def dfToRedditTable(df):
     num_cols = len(df.columns)
@@ -14,19 +13,23 @@ def makeReply(player_name, stats, comment):
 
 
 if __name__ == "__main__":
+    with open("secrets.yaml") as stream:
+        try:
+            secrets = yaml.safe_load(stream)
+        except yaml.YAMLError as e:
+            print(e)
     while True:
         reddit = praw.Reddit(
-        client_id = "",
-        client_secret = "",
+        client_id = secrets["client_id"],
+        client_secret = secrets["client_secret"],
         user_agent = "python:com.example.bball_stat_bot:v0.1 (by u/canned_food)",
         username = "bball_stat_bot",
-        password = ""
+        password = secrets["password"]
         )
 
         for mention in reddit.inbox.mentions():
             if mention.new:
                 args = mention.body.split(' ')
-                
                 full_name = ' '.join(args[1:])
                 stats = get_stats(full_name)
                 formatted_stats = dfToRedditTable(stats)
