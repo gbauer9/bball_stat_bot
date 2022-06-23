@@ -22,7 +22,7 @@ if __name__ == "__main__":
         reddit = praw.Reddit(
         client_id = secrets["client_id"],
         client_secret = secrets["client_secret"],
-        user_agent = "python:com.example.bball_stat_bot:v0.1 (by u/canned_food)",
+        user_agent = secrets["user_agent"],
         username = "bball_stat_bot",
         password = secrets["password"]
         )
