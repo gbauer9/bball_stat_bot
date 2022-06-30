@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+ app:
+  image: bball_stat_bot
+  volumes:
+  - ./:/app
