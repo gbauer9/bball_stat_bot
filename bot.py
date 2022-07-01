@@ -13,12 +13,17 @@ def makeReply(player_name, stats, comment):
 
 
 if __name__ == "__main__":
+    # Get secrets needed to connect to Reddit from secrets file
     with open("secrets.yaml") as stream:
         try:
             secrets = yaml.safe_load(stream)
         except yaml.YAMLError as e:
             print(e)
+    
+    # Main loop
     while True:
+
+        # Get reddit instance
         reddit = praw.Reddit(
         client_id = secrets["client_id"],
         client_secret = secrets["client_secret"],
@@ -27,6 +32,7 @@ if __name__ == "__main__":
         password = secrets["password"]
         )
 
+        # Loop through mentions, if unread then parse, reply, and mark as read
         for mention in reddit.inbox.mentions():
             if mention.new:
                 args = mention.body.split(' ')
@@ -35,3 +41,4 @@ if __name__ == "__main__":
                 formatted_stats = dfToRedditTable(stats)
                 makeReply(full_name, formatted_stats, mention)
                 mention.mark_read()
+                # Howdy Hoe
