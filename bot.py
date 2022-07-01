@@ -3,9 +3,9 @@ from basketball_reference_scraper.players import get_stats
 
 # TODO: Type hints
 # TODO: Convert Request to dataclass
-# TODO: Better input parsing
+# TODO: Better input parsing/don't fail on bad input
 # TODO: Add comparison feature
-
+# TODO: Retry if server error
 
 class Request:
     def __init__(self, full_name = None, stat_arg_idx = None, ind_stats = []):
@@ -57,9 +57,10 @@ if __name__ == "__main__":
                 args = mention.body.split(" ")
 
                 # If request specifies specific stats, set the index of stat arg so we know where to split
-                if "stats" in args:
-                    req.stat_arg_idx = args.index("stats")
+                if "-s" in args:
+                    req.stat_arg_idx = args.index("-s")
                     req.full_name = ' '.join(args[1:req.stat_arg_idx])
+                    # BUG: eFG% is not fully capitalized, so defaulting to upper() doesn't work
                     req.ind_stats = ["SEASON"] + args[req.stat_arg_idx + 1].upper().split(",")
                 else:
                     req.full_name = ' '.join(args[1:])
