@@ -7,6 +7,27 @@ from basketball_reference_scraper.players import get_stats
 # TODO: Add comparison feature
 # TODO: Retry if server error
 
+POSSIBLE_STATS = {
+    "G",
+    "GS",
+    "MP",
+    "FG",
+    "FGA",
+    "FG%",
+    "3P",
+    "3PA",
+    "3P%",
+    "2P",
+    "2PA",
+    "2P%",
+    "eFG%",
+    "FT",
+    "FTA",
+    "FT%",
+    "ORB",
+    "DRB"
+}
+
 class Request:
     def __init__(self, full_name = None, stat_arg_idx = None, ind_stats = []):
         self.full_name = full_name
