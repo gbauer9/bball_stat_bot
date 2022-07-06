@@ -54,7 +54,7 @@ def makeReply(stats, comment):
 
 if __name__ == "__main__":
     # Set up logger
-    logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+    logFormatter = logging.Formatter("%(asctime)s [%(threadName)s] [%(levelname)s]  %(message)s")
     rootLogger = logging.getLogger()
 
     fileHandler = logging.FileHandler("bball_stat_bot.log", mode='w')
@@ -71,7 +71,8 @@ if __name__ == "__main__":
         try:
             secrets = yaml.safe_load(stream)
         except yaml.YAMLError as e:
-            print(e)
+            rootLogger.critical("Unable to parse secrets.yaml", exc_info=True)
+            exit(1)
 
     # Get reddit instance
     reddit = praw.Reddit(
@@ -88,6 +89,7 @@ if __name__ == "__main__":
         # Loop through mentions, if unread then parse, reply, and mark as read
         for mention in reddit.inbox.mentions():
             if mention.new:
+                rootLogger.info(f"Processing request: {mention.body}")
                 req = Request()
                 args = mention.body.split(" ")
 
