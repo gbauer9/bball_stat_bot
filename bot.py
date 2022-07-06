@@ -1,8 +1,9 @@
-import praw, yaml 
+import praw, yaml, logging, sys
+from dataclasses import dataclass, field
+from typing import List
 from basketball_reference_scraper.players import get_stats
 
 # TODO: Type hints
-# TODO: Convert Request to dataclass
 # TODO: Better input parsing/don't fail on bad input
 # TODO: Add comparison feature
 # TODO: Retry if server error
@@ -28,11 +29,11 @@ POSSIBLE_STATS = {
     "DRB"
 }
 
+@dataclass
 class Request:
-    def __init__(self, full_name = None, stat_arg_idx = None, ind_stats = []):
-        self.full_name = full_name
-        self.stat_arg_idx = stat_arg_idx
-        self.ind_stats = ind_stats
+    full_name: str = ""
+    stat_arg_idx: int = None
+    ind_stats: List[str] = field(default_factory=list)
 
 def dfToRedditTable(df):
     num_cols = len(df.columns)
@@ -52,24 +53,37 @@ def makeReply(stats, comment):
 
 
 if __name__ == "__main__":
+    # Set up logger
+    logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+    rootLogger = logging.getLogger()
+
+    fileHandler = logging.FileHandler("bball_stat_bot.log", mode='w')
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
+
+    consoleHandler = logging.StreamHandler(sys.stdout)
+    consoleHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(consoleHandler)
+    rootLogger.setLevel(logging.INFO)
+
     # Get secrets needed to connect to Reddit from secrets file
     with open("secrets.yaml") as stream:
         try:
             secrets = yaml.safe_load(stream)
         except yaml.YAMLError as e:
             print(e)
-    
+
+    # Get reddit instance
+    reddit = praw.Reddit(
+    client_id = secrets["client_id"],
+    client_secret = secrets["client_secret"],
+    user_agent = secrets["user_agent"],
+    username = "bball_stat_bot",
+    password = secrets["password"]
+    )
+            
     # Main loop
     while True:
-
-        # Get reddit instance
-        reddit = praw.Reddit(
-        client_id = secrets["client_id"],
-        client_secret = secrets["client_secret"],
-        user_agent = secrets["user_agent"],
-        username = "bball_stat_bot",
-        password = secrets["password"]
-        )
 
         # Loop through mentions, if unread then parse, reply, and mark as read
         for mention in reddit.inbox.mentions():
