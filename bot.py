@@ -1,4 +1,4 @@
-import praw, yaml, logging, sys
+import praw, yaml, logging, sys, argparse
 from dataclasses import dataclass, field
 from typing import List
 from basketball_reference_scraper.players import get_stats
@@ -32,7 +32,6 @@ POSSIBLE_STATS = {
 @dataclass
 class Request:
     full_name: str = ""
-    stat_arg_idx: int = None
     ind_stats: List[str] = field(default_factory=list)
 
 def dfToRedditTable(df):
@@ -82,6 +81,11 @@ if __name__ == "__main__":
     username = "bball_stat_bot",
     password = secrets["password"]
     )
+
+    # Set up arg parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("name", type=str, nargs='+')
+    parser.add_argument("-s", "--stats", nargs='?', default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB,TRB,STL,BLK,TOV,PF,PTS")
             
     # Main loop
     while True:
@@ -91,17 +95,13 @@ if __name__ == "__main__":
             if mention.new:
                 rootLogger.info(f"Processing request: {mention.body}")
                 req = Request()
-                args = mention.body.split(" ")
+                args = mention.body.split(" ")[1:]
 
                 # If request specifies specific stats, set the index of stat arg so we know where to split
-                if "-s" in args:
-                    req.stat_arg_idx = args.index("-s")
-                    req.full_name = ' '.join(args[1:req.stat_arg_idx])
-                    # BUG: eFG% is not fully capitalized, so defaulting to upper() doesn't work
-                    req.ind_stats = ["SEASON"] + args[req.stat_arg_idx + 1].upper().split(",")
-                else:
-                    req.full_name = ' '.join(args[1:])
-
+                parsed_args = parser.parse_args(args)
+                req.full_name = ' '.join(parsed_args.name)
+                req.ind_stats = ["SEASON"] + parsed_args.stats.upper().split(',')
+                
                 formatted_stats = getResponse(req)
                 makeReply(formatted_stats, mention)
                 mention.mark_read()
