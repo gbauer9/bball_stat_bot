@@ -1,13 +1,13 @@
 from pandas import DataFrame
 import praw, yaml, logging, sys, argparse
-from dataclasses import dataclass, field
 from typing import List
 from basketball_reference_scraper.players import get_stats
 
 # TODO: Type hints
-# TODO: Better input parsing/don't fail on bad input
 # TODO: Add comparison feature
+# TODO: Add advanced stat lookup
 # TODO: Retry if server error
+# TODO: Don't fail on no results
 
 POSSIBLE_STATS = {
     "G",
@@ -30,6 +30,9 @@ POSSIBLE_STATS = {
     "DRB"
 }
 
+class PlayerNotFound(Exception):
+    pass
+
 def dfToRedditTable(df: DataFrame):
     num_cols = len(df.columns)
     header_sep = ['-'] * num_cols
@@ -37,11 +40,13 @@ def dfToRedditTable(df: DataFrame):
     return df.to_csv(index=False, sep='|', line_terminator='\n') 
 
 def getResponse(name: str, stats: List[str]):
+    player_stats = get_stats(name)
+    if len(player_stats.index) == 0:
+        raise PlayerNotFound("No player found with given name") 
     return dfToRedditTable(get_stats(name)[stats])
 
-def makeReply(stats, comment):
-    header = "Results\n\n"
-    comment.reply(body=header+stats) 
+def makeReply(stats: str, comment: praw.models.Comment):
+    comment.reply(body=stats) 
 
 
 if __name__ == "__main__":
@@ -94,6 +99,11 @@ if __name__ == "__main__":
                 player_name = ' '.join(parsed_args.name)
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(',')
                 
-                formatted_stats = getResponse(player_name, sel_stats)
-                makeReply(formatted_stats, mention)
+                try:
+                    response = getResponse(player_name, sel_stats)
+                except Exception as err:
+                    rootLogger.warn(f"Unable to generate response: {err}")
+                    response = "Unable to find results for given input."
+                    
+                makeReply(response, mention)
                 mention.mark_read()
