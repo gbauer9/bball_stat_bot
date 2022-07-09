@@ -1,3 +1,4 @@
+from pandas import DataFrame
 import praw, yaml, logging, sys, argparse
 from dataclasses import dataclass, field
 from typing import List
@@ -29,22 +30,14 @@ POSSIBLE_STATS = {
     "DRB"
 }
 
-@dataclass
-class Request:
-    full_name: str = ""
-    ind_stats: List[str] = field(default_factory=list)
-
-def dfToRedditTable(df):
+def dfToRedditTable(df: DataFrame):
     num_cols = len(df.columns)
     header_sep = ['-'] * num_cols
     df.loc[0] = header_sep
     return df.to_csv(index=False, sep='|', line_terminator='\n') 
 
-def getResponse(req: Request):
-    raw_stats = get_stats(req.full_name)
-    if req.ind_stats:
-        raw_stats = raw_stats[req.ind_stats]
-    return dfToRedditTable(raw_stats)
+def getResponse(name: str, stats: List[str]):
+    return dfToRedditTable(get_stats(name)[stats])
 
 def makeReply(stats, comment):
     header = "Results\n\n"
@@ -94,14 +87,13 @@ if __name__ == "__main__":
         for mention in reddit.inbox.mentions():
             if mention.new:
                 rootLogger.info(f"Processing request: {mention.body}")
-                req = Request()
                 args = mention.body.split(" ")[1:]
 
                 # If request specifies specific stats, set the index of stat arg so we know where to split
                 parsed_args = parser.parse_args(args)
-                req.full_name = ' '.join(parsed_args.name)
-                req.ind_stats = ["SEASON"] + parsed_args.stats.upper().split(',')
+                player_name = ' '.join(parsed_args.name)
+                sel_stats = ["SEASON"] + parsed_args.stats.upper().split(',')
                 
-                formatted_stats = getResponse(req)
+                formatted_stats = getResponse(player_name, sel_stats)
                 makeReply(formatted_stats, mention)
                 mention.mark_read()
