@@ -8,7 +8,7 @@ from basketball_reference_scraper.players import get_stats
 # TODO: Retry if server error
 # TODO: Don't fail on no results
 
-POSSIBLE_STATS = {
+POSSIBLE_STATS = [ 
     "AGE",
     "TEAM",
     "LEAGUE",
@@ -31,7 +31,7 @@ POSSIBLE_STATS = {
     "FT%",
     "ORB",
     "DRB"
-}
+]
 
 class PlayerNotFound(Exception):
     pass
