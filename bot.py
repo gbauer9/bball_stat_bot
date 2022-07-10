@@ -8,31 +8,6 @@ from basketball_reference_scraper.players import get_stats
 # TODO: Retry if server error
 # TODO: Don't fail on no results
 
-POSSIBLE_STATS = [ 
-    "AGE",
-    "TEAM",
-    "LEAGUE",
-    "POS",
-    "G",
-    "GS",
-    "MP",
-    "FG",
-    "FGA",
-    "FG%",
-    "3P",
-    "3PA",
-    "3P%",
-    "2P",
-    "2PA",
-    "2P%",
-    "eFG%",
-    "FT",
-    "FTA",
-    "FT%",
-    "ORB",
-    "DRB"
-]
-
 class PlayerNotFound(Exception):
     pass
 
@@ -86,7 +61,7 @@ if __name__ == "__main__":
     # Set up arg parser
     parser = argparse.ArgumentParser()
     parser.add_argument("name", type=str, nargs='+')
-    parser.add_argument("-s", "--stats", nargs='?', default=POSSIBLE_STATS)
+    parser.add_argument("-s", "--stats", nargs='?', default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB")
     parser.add_argument("-p", "--playoffs", action="store_true")
             
     # Main loop
