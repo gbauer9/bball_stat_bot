@@ -99,11 +99,16 @@ if __name__ == "__main__":
                 player_name = ' '.join(parsed_args.name)
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(',')
                 
+                # Try to search for given player using basketball_reference_scraper
                 try:
                     response = getResponse(player_name, sel_stats, parsed_args.playoffs)
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}")
                     response = "Unable to find results for given input."
                     
-                makeReply(response, mention)
+                # Reply to comment and mark as read so it's not processed again
+                try:
+                    makeReply(response, mention)
+                except Exception as err:
+                    logger.warn(f"Error occurred while replying to comment: {err}")
                 mention.mark_read()
