@@ -15,16 +15,38 @@ def dfToRedditTable(df: DataFrame):
     num_cols = len(df.columns)
     header_sep = ['-'] * num_cols
     df.loc[0] = header_sep
-    return df.to_csv(index=False, sep='|', line_terminator='\n') 
+    return df.to_csv(index=False, sep='|', line_terminator='\n')
 
-def getResponse(name: str, stats: List[str], playoffs: bool):
+def getStatsWrapper(name: str):
     player_stats = get_stats(name)
     if len(player_stats.index) == 0:
-        raise PlayerNotFound("No player found with given name") 
-    return dfToRedditTable(get_stats(name, playoffs=playoffs)[stats])
+        raise PlayerNotFound(f"No player found with given name: {name}")
+    return player_stats
 
-def makeReply(stats: str, comment: praw.models.Comment):
-    comment.reply(body=stats) 
+def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool):
+    response = []
+
+    try:
+        player_stats = getStatsWrapper(name)
+    except PlayerNotFound:
+        raise
+
+    response.append(player_stats)
+
+    if second_name:
+        try:
+            compare_stats = getStatsWrapper(second_name)        
+        except PlayerNotFound:
+            raise
+        
+        response.append(compare_stats)
+
+    
+    return [dfToRedditTable(player_df[stats]) for player_df in response]
+
+def makeReply(stats: List[str], comment: praw.models.Comment):
+    body = '\n'.join(stats)
+    comment.reply(body=body) 
 
 
 if __name__ == "__main__":
@@ -61,7 +83,8 @@ if __name__ == "__main__":
     # Set up arg parser
     parser = argparse.ArgumentParser()
     parser.add_argument("name", type=str, nargs='+')
-    parser.add_argument("-s", "--stats", nargs='?', default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB")
+    parser.add_argument("-c", "--compare", type=str, nargs='+', default="")
+    parser.add_argument("-s", "--stats", type=str, nargs='?', default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB")
     parser.add_argument("-p", "--playoffs", action="store_true")
             
     # Main loop
@@ -73,14 +96,15 @@ if __name__ == "__main__":
                 logger.info(f"Processing request: {mention.body}")
                 args = mention.body.split(" ")[1:]
 
-                # If request specifies specific stats, set the index of stat arg so we know where to split
+                # Parse args and get player names/stats
                 parsed_args = parser.parse_args(args)
                 player_name = ' '.join(parsed_args.name)
+                compare_name = ' '.join(parsed_args.compare)
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(',')
                 
                 # Try to search for given player using basketball_reference_scraper
                 try:
-                    response = getResponse(player_name, sel_stats, parsed_args.playoffs)
+                    response = getResponse(player_name, compare_name, sel_stats, parsed_args.playoffs)
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}")
                     response = "Unable to find results for given input."
