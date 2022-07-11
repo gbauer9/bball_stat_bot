@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pandas import DataFrame
 import praw, yaml, logging, sys, argparse
 from typing import List
@@ -10,6 +11,11 @@ from basketball_reference_scraper.players import get_stats
 
 class PlayerNotFound(Exception):
     pass
+
+@dataclass
+class PlayerResponse:
+    name: str
+    stats: str
 
 def dfToRedditTable(df: DataFrame):
     num_cols = len(df.columns)
@@ -26,26 +32,31 @@ def getStatsWrapper(name: str):
 def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool):
     response = []
 
+    # Try to get data of first player, append (name, df) to response
     try:
         player_stats = getStatsWrapper(name)
     except PlayerNotFound:
         raise
 
-    response.append(player_stats)
+    response.append((name, player_stats))
 
+    # Try to get data of second player, append (name, df)
     if second_name:
         try:
             compare_stats = getStatsWrapper(second_name)        
         except PlayerNotFound:
             raise
         
-        response.append(compare_stats)
+        response.append((second_name, compare_stats))
 
-    
-    return [dfToRedditTable(player_df[stats]) for player_df in response]
+    # Return a list of PlayerResponse object which have the player name and redditified stats
+    return [PlayerResponse(player[0], dfToRedditTable(player[1][stats])) for player in response]
 
-def makeReply(stats: List[str], comment: praw.models.Comment):
-    body = '\n'.join(stats)
+def makeReply(stats: List[PlayerResponse], comment: praw.models.Comment):
+    body = ""
+    for player in stats:
+        body += f"Stats for {player.name}:\n\n"
+        body += f"{player.stats}\n\n"
     comment.reply(body=body) 
 
 
