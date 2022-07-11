@@ -4,10 +4,13 @@ import praw, yaml, logging, sys, argparse
 from typing import List
 from basketball_reference_scraper.players import get_stats
 
-# TODO: Add comparison feature
+# TODO: Put on AWS
+# TODO: Complete type hinting everywhere/formatter like black
+# TODO: Rename variables to make more sense
+# TODO: Create CI/CD pipeline
 # TODO: Add advanced stat lookup
 # TODO: Retry if server error
-# TODO: Don't fail on no results
+# TODO: Possibly limit # of years so as to not clutter 
 
 class PlayerNotFound(Exception):
     pass
@@ -23,8 +26,8 @@ def dfToRedditTable(df: DataFrame):
     df.loc[0] = header_sep
     return df.to_csv(index=False, sep='|', line_terminator='\n')
 
-def getStatsWrapper(name: str):
-    player_stats = get_stats(name)
+def getStatsWrapper(name: str, playoffs: bool):
+    player_stats = get_stats(name, playoffs=playoffs)
     if len(player_stats.index) == 0:
         raise PlayerNotFound(f"No player found with given name: {name}")
     return player_stats
@@ -34,20 +37,20 @@ def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool):
 
     # Try to get data of first player, append (name, df) to response
     try:
-        player_stats = getStatsWrapper(name)
+        player_stats = getStatsWrapper(name, playoffs)
     except PlayerNotFound:
         raise
 
-    response.append((name, player_stats))
+    response.append((name, player_stats[stats]))
 
     # Try to get data of second player, append (name, df)
     if second_name:
         try:
-            compare_stats = getStatsWrapper(second_name)        
+            compare_stats = getStatsWrapper(second_name, playoffs)        
         except PlayerNotFound:
             raise
         
-        response.append((second_name, compare_stats))
+        response.append((second_name, compare_stats[stats]))
 
     # Return a list of PlayerResponse object which have the player name and redditified stats
     return [PlayerResponse(player[0], dfToRedditTable(player[1][stats])) for player in response]
