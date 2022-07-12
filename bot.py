@@ -114,7 +114,7 @@ if __name__ == "__main__":
         "--stats",
         type=str,
         nargs="?",
-        default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB",
+        default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB,PTS",
     )
     parser.add_argument("-p", "--playoffs", action="store_true")
 
