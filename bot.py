@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from pandas import DataFrame
 import praw, yaml, logging, sys, argparse
-from typing import List
+from typing import List, Tuple
 from basketball_reference_scraper.players import get_stats
 
+# TODO: Write unit tests so I don't have to keep making new reddit comments
 # TODO: Put on AWS
-# TODO: Complete type hinting everywhere/formatter like black
 # TODO: Rename variables to make more sense
 # TODO: Create CI/CD pipeline
 # TODO: Add advanced stat lookup
@@ -38,12 +38,12 @@ def getStatsWrapper(name: str, playoffs: bool):
 
 
 def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool):
-    response = []
+    response: List[Tuple(str, DataFrame)] = []
 
     # Try to get data of first player, append (name, df) to response
     try:
         player_stats = getStatsWrapper(name, playoffs)
-    except PlayerNotFound:
+    except Exception:
         raise
 
     response.append((name, player_stats[stats]))
@@ -52,7 +52,7 @@ def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool):
     if second_name:
         try:
             compare_stats = getStatsWrapper(second_name, playoffs)
-        except PlayerNotFound:
+        except Exception:
             raise
 
         response.append((second_name, compare_stats[stats]))
@@ -140,7 +140,9 @@ if __name__ == "__main__":
                     )
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}")
-                    response = "Unable to find results for given input."
+                    mention.reply(body="Unable to find results one/both players.")
+                    mention.mark_read()
+                    continue
 
                 # Reply to comment and mark as read so it's not processed again
                 try:
