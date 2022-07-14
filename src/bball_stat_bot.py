@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from pandas import DataFrame
+from pandas import DataFrame, concat
 import praw, yaml, logging, sys, argparse
+from requests import head
 from typing import List, Tuple
 from basketball_reference_scraper.players import get_stats
 
@@ -24,9 +25,13 @@ class PlayerResponse:
 
 
 def dfToRedditTable(df: DataFrame):
+    # Reddit tables need a row of "-" to separate headers from data
     num_cols = len(df.columns)
-    header_sep = ["-"] * num_cols
-    df.loc[0] = header_sep
+    header_sep = DataFrame([["-"] * num_cols], columns=df.columns)
+
+    # Insert header seperator row at top of stats dataframe
+    df = concat([header_sep, df], ignore_index=True)
+
     return df.to_csv(index=False, sep="|", line_terminator="\n")
 
 
