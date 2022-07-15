@@ -45,12 +45,11 @@ def testPlayerNotFoundException(monkeypatch):
     def mockGetStats(name: str, playoffs: bool):
         return pd.DataFrame([])
 
-    monkeypatch.setattr(
-        "src.bball_stat_bot.get_stats", mockGetStats
-    )
+    monkeypatch.setattr("src.bball_stat_bot.get_stats", mockGetStats)
 
     with pytest.raises(stat_bot.PlayerNotFound):
         _ = stat_bot.getStatsWrapper("test", False)
+
 
 def testHappyPath(monkeypatch):
     def mockGetStats(name: str, playoffs: bool):
@@ -63,15 +62,15 @@ def testHappyPath(monkeypatch):
             }
         )
 
-    monkeypatch.setattr(
-        "src.bball_stat_bot.get_stats", mockGetStats
+    monkeypatch.setattr("src.bball_stat_bot.get_stats", mockGetStats)
+
+    assert stat_bot.getStatsWrapper("test", False).equals(
+        pd.DataFrame(
+            {
+                "SEASON": ["2020-2021", "2021-2022"],
+                "AGE": [23.0, 24.0],
+                "TEAM": ["TOR", "TOR"],
+                "LEAGUE": ["NBA", "NBA"],
+            }
+        )
     )
-    
-    assert stat_bot.getStatsWrapper("test", False).equals(pd.DataFrame(
-        {
-            "SEASON": ["2020-2021", "2021-2022"],
-            "AGE": [23.0, 24.0],
-            "TEAM": ["TOR", "TOR"],
-            "LEAGUE": ["NBA", "NBA"],
-        }
-    ))
