@@ -1,47 +1,24 @@
 import src.bball_stat_bot as stat_bot, pandas as pd, pytest
 
 
-class TestDfToRedditTable:
-    def testOne(self):
-        self.df = pd.DataFrame(
-            {
-                "SEASON": ["2020-2021"],
-                "AGE": ["25.0"],
-                "TEAM": ["POR"],
-                "LEAGUE": ["NBA"],
-            }
-        )
-        print(self.df)
+def testDfToRedditTable():
+    df = pd.DataFrame(
+        {
+            "SEASON": ["2020-2021"],
+            "AGE": [25.0],
+            "TEAM": ["POR"],
+            "LEAGUE": ["NBA"],
+        }
+    )
+    print(df)
 
-        self.transformed = stat_bot.dfToRedditTable(self.df)
+    transformed = stat_bot.dfToRedditTable(df)
 
-        print(self.transformed)
-        assert (
-            self.transformed
-            == "SEASON|AGE|TEAM|LEAGUE\n-|-|-|-\n2020-2021|25.0|POR|NBA\n"
-        )
-
-    def testTwo(self):
-        self.df = pd.DataFrame(
-            {
-                "SEASON": ["2018-2019", "2019-2020"],
-                "AGE": [25.0, 26.0],
-                "TEAM": ["POR", "LAL"],
-                "LEAGUE": ["NBA", "ABA"],
-            }
-        )
-        print(self.df)
-
-        self.transformed = stat_bot.dfToRedditTable(self.df)
-
-        print(self.transformed)
-        assert (
-            self.transformed
-            == "SEASON|AGE|TEAM|LEAGUE\n-|-|-|-\n2018-2019|25.0|POR|NBA\n2019-2020|26.0|LAL|ABA\n"
-        )
+    print(transformed)
+    assert transformed == "SEASON|AGE|TEAM|LEAGUE\n-|-|-|-\n2020-2021|25.0|POR|NBA\n"
 
 
-def testPlayerNotFoundException(monkeypatch):
+def testGetStatsWrapperException(monkeypatch):
     def mockGetStats(name: str, playoffs: bool):
         return pd.DataFrame([])
 
@@ -51,7 +28,7 @@ def testPlayerNotFoundException(monkeypatch):
         _ = stat_bot.getStatsWrapper("test", False)
 
 
-def testHappyPath(monkeypatch):
+def testGetStatsWrapperHappyPath(monkeypatch):
     def mockGetStats(name: str, playoffs: bool):
         return pd.DataFrame(
             {
@@ -74,3 +51,29 @@ def testHappyPath(monkeypatch):
             }
         )
     )
+
+def testGetResponseException(monkeypatch):
+    def mockGetStats(name: str, playoffs: bool):
+        return pd.DataFrame([])
+        
+    monkeypatch.setattr("src.bball_stat_bot.get_stats", mockGetStats)
+
+    with pytest.raises(stat_bot.PlayerNotFound):
+        _ = stat_bot.getResponse("Test", "", ["SEASON", "AGE", "TEAM", "LEAGUE"], False)
+
+def testGetResponseOnePlayer(monkeypatch):
+    def mockGetStats(name: str, playoffs: bool):
+       return pd.DataFrame(
+            {
+                "SEASON": ["2020-2021", "2021-2022"],
+                "AGE": [23.0, 24.0],
+                "TEAM": ["TOR", "TOR"],
+                "LEAGUE": ["NBA", "NBA"],
+            }
+        ) 
+
+    monkeypatch.setattr("src.bball_stat_bot.get_stats", mockGetStats)
+
+    player_name = "Damian Lillard"
+
+    assert stat_bot.getResponse(player_name, "", ["SEASON", "AGE", "TEAM", "LEAGUE"], False) == [stat_bot.PlayerResponse("Damian Lillard", "SEASON|AGE|TEAM|LEAGUE\n-|-|-|-\n2020-2021|23.0|TOR|NBA\n2021-2022|24.0|TOR|NBA\n")]
