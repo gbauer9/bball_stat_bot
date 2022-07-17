@@ -5,12 +5,11 @@ from requests import head
 from typing import List, Tuple
 from basketball_reference_scraper.players import get_stats
 
-# TODO: Write unit tests so I don't have to keep making new reddit comments
+# TODO; Refactor all input parsing/validation to single func
 # TODO: Put on AWS
 # TODO: Rename variables to make more sense
 # TODO: Create CI/CD pipeline
 # TODO: Add advanced stat lookup
-# TODO: Retry if server error
 # TODO: Possibly limit # of years so as to not clutter
 
 
@@ -137,6 +136,13 @@ if __name__ == "__main__":
                 player_name = " ".join(parsed_args.name)
                 compare_name = " ".join(parsed_args.compare)
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(",")
+
+                # Check if both names are the same
+                if player_name.lower() == compare_name.lower():
+                    logger.info("Same player")
+                    mention.reply(body="Cannot compare a player to themselves")
+                    mention.mark_read()
+                    continue
 
                 # Try to search for given player using basketball_reference_scraper
                 try:
