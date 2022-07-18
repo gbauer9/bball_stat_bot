@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from pandas import DataFrame, concat
 import praw, yaml, logging, sys, argparse
-from requests import head
 from typing import List, Tuple
 from basketball_reference_scraper.players import get_stats
 
@@ -11,6 +10,37 @@ from basketball_reference_scraper.players import get_stats
 # TODO: Create CI/CD pipeline
 # TODO: Add advanced stat lookup
 # TODO: Possibly limit # of years so as to not clutter
+
+VALID_STATS = [
+    "AGE",
+    "TEAM",
+    "LEAGUE",
+    "POS",
+    "G",
+    "GS",
+    "MP",
+    "FG",
+    "FGA",
+    "FG%",
+    "3P",
+    "3PA",
+    "3P%",
+    "2P",
+    "2PA",
+    "2P%",
+    "FT",
+    "FTA",
+    "FT%",
+    "ORB",
+    "DRB",
+    "TRB",
+    "AST",
+    "STL",
+    "BLK",
+    "TOV",
+    "PF",
+    "PTS",
+]
 
 
 class PlayerNotFound(Exception):
@@ -39,6 +69,16 @@ def getStatsWrapper(name: str, playoffs: bool):
     if len(player_stats.index) == 0:
         raise PlayerNotFound(f"No player found with given name: {name}")
     return player_stats
+
+
+def isValidInput(player_one: str, player_two: str, sel_stats: List[str]):
+    if player_one.lower() == player_two.lower():
+        return False
+
+    if sel_stats not in VALID_STATS:
+        return False
+
+    return True
 
 
 def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool):
@@ -137,10 +177,8 @@ if __name__ == "__main__":
                 compare_name = " ".join(parsed_args.compare)
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(",")
 
-                # Check if both names are the same
-                if player_name.lower() == compare_name.lower():
-                    logger.info("Same player")
-                    mention.reply(body="Cannot compare a player to themselves")
+                if not isValidInput(player_name, compare_name, sel_stats):
+                    mention.reply(body="Invalid input.")
                     mention.mark_read()
                     continue
 
