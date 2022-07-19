@@ -72,6 +72,9 @@ def getStatsWrapper(name: str, playoffs: bool):
 
 
 def isValidInput(player_one: str, player_two: str, sel_stats: List[str]):
+    if not player_one:
+        return False
+
     if player_one.lower() == player_two.lower():
         return False
 
@@ -177,6 +180,7 @@ if __name__ == "__main__":
                 compare_name = " ".join(parsed_args.compare)
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(",")
 
+                # Check input for validity, if not then reply 
                 if not isValidInput(player_name, compare_name, sel_stats):
                     mention.reply(body="Invalid input.")
                     mention.mark_read()
