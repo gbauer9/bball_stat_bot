@@ -81,13 +81,15 @@ def isValidInput(player_one: str, player_two: str, sel_stats: List[str], year: i
     if sel_stats not in VALID_STATS:
         return False
 
-    if not (1947 < year < date.today().year): 
+    if not (1947 <= year <= date.today().year):
         return False
 
     return True
 
 
-def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool, year: int):
+def getResponse(
+    name: str, second_name: str, stats: List[str], playoffs: bool, year: int
+):
     response: List[Tuple(str, DataFrame)] = []
 
     # Try to get data of first player, append (name, df) to response
@@ -185,7 +187,9 @@ if __name__ == "__main__":
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(",")
 
                 # Check input for validity, if not then reply
-                if not isValidInput(player_name, compare_name, sel_stats, parsed_args.year):
+                if not isValidInput(
+                    player_name, compare_name, sel_stats, parsed_args.year
+                ):
                     mention.reply(body="Invalid input.")
                     mention.mark_read()
                     continue
@@ -193,7 +197,11 @@ if __name__ == "__main__":
                 # Try to search for given player using basketball_reference_scraper
                 try:
                     response = getResponse(
-                        player_name, compare_name, sel_stats, parsed_args.playoffs, parsed_args.year
+                        player_name,
+                        compare_name,
+                        sel_stats,
+                        parsed_args.playoffs,
+                        parsed_args.year,
                     )
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}")
