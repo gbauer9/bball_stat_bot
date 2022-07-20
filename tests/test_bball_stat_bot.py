@@ -60,7 +60,9 @@ def testGetResponseException(monkeypatch):
     monkeypatch.setattr("src.bball_stat_bot.get_stats", mockGetStats)
 
     with pytest.raises(stat_bot.PlayerNotFound):
-        _ = stat_bot.getResponse("Test", "", ["SEASON", "AGE", "TEAM", "LEAGUE"], False)
+        _ = stat_bot.getResponse(
+            "Test", "", ["SEASON", "AGE", "TEAM", "LEAGUE"], False, 2022
+        )
 
 
 def testGetResponseOnePlayer(monkeypatch):
@@ -79,7 +81,7 @@ def testGetResponseOnePlayer(monkeypatch):
     player_name = "Damian Lillard"
 
     assert stat_bot.getResponse(
-        player_name, "", ["SEASON", "AGE", "TEAM", "LEAGUE"], False
+        player_name, "", ["SEASON", "AGE", "TEAM", "LEAGUE"], False, 2022
     ) == [
         stat_bot.PlayerResponse(
             player_name,
@@ -104,7 +106,7 @@ def testGetResponseTwoPlayers(monkeypatch):
     player_one, player_two = "Jusuf Nurkic", "Keljin Blevins"
 
     assert stat_bot.getResponse(
-        player_one, player_two, ["SEASON", "AGE", "TEAM", "LEAGUE"], False
+        player_one, player_two, ["SEASON", "AGE", "TEAM", "LEAGUE"], False, 2022
     ) == [
         stat_bot.PlayerResponse(
             player_one,
