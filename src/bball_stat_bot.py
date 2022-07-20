@@ -1,15 +1,15 @@
+import praw, yaml, logging, sys, argparse
 from dataclasses import dataclass
 from pandas import DataFrame, concat
-import praw, yaml, logging, sys, argparse
 from typing import List, Tuple
 from basketball_reference_scraper.players import get_stats
+from datetime import date
 
-# TODO; Refactor all input parsing/validation to single func
 # TODO: Put on AWS
 # TODO: Rename variables to make more sense
 # TODO: Create CI/CD pipeline
 # TODO: Add advanced stat lookup
-# TODO: Possibly limit # of years so as to not clutter
+# TODO: Implement year selection logic
 
 VALID_STATS = [
     "AGE",
@@ -71,7 +71,7 @@ def getStatsWrapper(name: str, playoffs: bool):
     return player_stats
 
 
-def isValidInput(player_one: str, player_two: str, sel_stats: List[str]):
+def isValidInput(player_one: str, player_two: str, sel_stats: List[str], year: int):
     if not player_one:
         return False
 
@@ -81,10 +81,13 @@ def isValidInput(player_one: str, player_two: str, sel_stats: List[str]):
     if sel_stats not in VALID_STATS:
         return False
 
+    if not (1947 < year < date.today().year): 
+        return False
+
     return True
 
 
-def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool):
+def getResponse(name: str, second_name: str, stats: List[str], playoffs: bool, year: int):
     response: List[Tuple(str, DataFrame)] = []
 
     # Try to get data of first player, append (name, df) to response
@@ -163,6 +166,7 @@ if __name__ == "__main__":
         nargs="?",
         default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS",
     )
+    parser.add_argument("-y", "--year", type=int, nargs="?", default=2022)
     parser.add_argument("-p", "--playoffs", action="store_true")
 
     # Main loop
@@ -180,8 +184,8 @@ if __name__ == "__main__":
                 compare_name = " ".join(parsed_args.compare)
                 sel_stats = ["SEASON"] + parsed_args.stats.upper().split(",")
 
-                # Check input for validity, if not then reply 
-                if not isValidInput(player_name, compare_name, sel_stats):
+                # Check input for validity, if not then reply
+                if not isValidInput(player_name, compare_name, sel_stats, parsed_args.year):
                     mention.reply(body="Invalid input.")
                     mention.mark_read()
                     continue
@@ -189,7 +193,7 @@ if __name__ == "__main__":
                 # Try to search for given player using basketball_reference_scraper
                 try:
                     response = getResponse(
-                        player_name, compare_name, sel_stats, parsed_args.playoffs
+                        player_name, compare_name, sel_stats, parsed_args.playoffs, parsed_args.year
                     )
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}")
