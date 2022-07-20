@@ -9,38 +9,9 @@ from datetime import date
 # TODO: Rename variables to make more sense
 # TODO: Create CI/CD pipeline
 # TODO: Add advanced stat lookup
-# TODO: Implement year selection logic
-
-VALID_STATS = [
-    "AGE",
-    "TEAM",
-    "LEAGUE",
-    "POS",
-    "G",
-    "GS",
-    "MP",
-    "FG",
-    "FGA",
-    "FG%",
-    "3P",
-    "3PA",
-    "3P%",
-    "2P",
-    "2PA",
-    "2P%",
-    "FT",
-    "FTA",
-    "FT%",
-    "ORB",
-    "DRB",
-    "TRB",
-    "AST",
-    "STL",
-    "BLK",
-    "TOV",
-    "PF",
-    "PTS",
-]
+# TODO: Implement year selection logic and tests
+# TODO: Update tests for removal of stat selection/addition of advanced
+# TODO: Move all arg parsing into separate function
 
 
 class PlayerNotFound(Exception):
@@ -64,21 +35,18 @@ def dfToRedditTable(df: DataFrame):
     return df.to_csv(index=False, sep="|", line_terminator="\n")
 
 
-def getStatsWrapper(name: str, playoffs: bool):
-    player_stats = get_stats(name, playoffs=playoffs)
+def getStatsWrapper(name: str, playoffs: bool, advanced: bool):
+    player_stats = get_stats(name, playoffs=playoffs, stat_type= "ADVANCED" if advanced else "PER_GAME")
     if len(player_stats.index) == 0:
         raise PlayerNotFound(f"No player found with given name: {name}")
     return player_stats
 
 
-def isValidInput(player_one: str, player_two: str, sel_stats: List[str], year: int):
+def isValidInput(player_one: str, player_two: str, year: int):
     if not player_one:
         return False
 
     if player_one.lower() == player_two.lower():
-        return False
-
-    if sel_stats not in VALID_STATS:
         return False
 
     if not (1947 <= year <= date.today().year):
@@ -88,30 +56,30 @@ def isValidInput(player_one: str, player_two: str, sel_stats: List[str], year: i
 
 
 def getResponse(
-    name: str, second_name: str, stats: List[str], playoffs: bool, year: int
+    name: str, second_name: str, playoffs: bool, year: int, advanced: bool
 ):
     response: List[Tuple(str, DataFrame)] = []
 
     # Try to get data of first player, append (name, df) to response
     try:
-        player_stats = getStatsWrapper(name, playoffs)
+        player_stats = getStatsWrapper(name, playoffs, advanced)
     except Exception:
         raise
 
-    response.append((name, player_stats[stats]))
+    response.append((name, player_stats))
 
     # Try to get data of second player, append (name, df)
     if second_name:
         try:
-            compare_stats = getStatsWrapper(second_name, playoffs)
+            compare_stats = getStatsWrapper(second_name, playoffs, advanced)
         except Exception:
             raise
 
-        response.append((second_name, compare_stats[stats]))
+        response.append((second_name, compare_stats))
 
     # Return a list of PlayerResponse object which have the player name and redditified stats
     return [
-        PlayerResponse(player[0], dfToRedditTable(player[1][stats]))
+        PlayerResponse(player[0], dfToRedditTable(player[1]))
         for player in response
     ]
 
@@ -161,15 +129,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("name", type=str, nargs="+")
     parser.add_argument("-c", "--compare", type=str, nargs="+", default="")
-    parser.add_argument(
-        "-s",
-        "--stats",
-        type=str,
-        nargs="?",
-        default="AGE,TEAM,LEAGUE,POS,G,GS,MP,FG,FGA,FG%,3P,3PA,3P%,2P,2PA,2P%,FT,FTA,FT%,ORB,DRB,TRB,AST,STL,BLK,TOV,PF,PTS",
-    )
     parser.add_argument("-y", "--year", type=int, nargs="?", default=2022)
     parser.add_argument("-p", "--playoffs", action="store_true")
+    parser.add_argument("-a", "--advanced", action="store_true")
 
     # Main loop
     while True:
@@ -180,15 +142,14 @@ if __name__ == "__main__":
                 logger.info(f"Processing request: {mention.body}")
                 args = mention.body.split(" ")[1:]
 
-                # Parse args and get player names/stats
+                # Parse args and get player names
                 parsed_args = parser.parse_args(args)
                 player_name = " ".join(parsed_args.name)
                 compare_name = " ".join(parsed_args.compare)
-                sel_stats = ["SEASON"] + parsed_args.stats.upper().split(",")
 
                 # Check input for validity, if not then reply
                 if not isValidInput(
-                    player_name, compare_name, sel_stats, parsed_args.year
+                    player_name, compare_name, parsed_args.year
                 ):
                     mention.reply(body="Invalid input.")
                     mention.mark_read()
@@ -199,9 +160,9 @@ if __name__ == "__main__":
                     response = getResponse(
                         player_name,
                         compare_name,
-                        sel_stats,
                         parsed_args.playoffs,
                         parsed_args.year,
+                        parsed_args.advanced
                     )
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}")
