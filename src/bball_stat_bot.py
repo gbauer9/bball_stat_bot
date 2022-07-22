@@ -40,14 +40,18 @@ def dfToRedditTable(df: DataFrame):
 
 
 def getStatsWrapper(name: str, playoffs: bool, advanced: bool, year: int):
-    player_stats = get_stats(name, playoffs=playoffs, stat_type= "ADVANCED" if advanced else "PER_GAME")
+    player_stats = get_stats(
+        name, playoffs=playoffs, stat_type="ADVANCED" if advanced else "PER_GAME"
+    )
     if year:
         season = f"{year-1}-{str(year)[-2:]}"
         logger.info(f"SEASON: {season}")
         player_stats = player_stats.loc[player_stats["SEASON"] == season]
-    
+
     if len(player_stats.index) == 0:
-        raise PlayerNotFound(f"No player found with given name: {name} and season: {season}")
+        raise PlayerNotFound(
+            f"No player found with given name: {name} and season: {season}"
+        )
     return player_stats
 
 
@@ -65,9 +69,7 @@ def isValidInput(player_one: str, player_two: str, year: int):
     return True
 
 
-def getResponse(
-    name: str, second_name: str, playoffs: bool, year: int, advanced: bool
-):
+def getResponse(name: str, second_name: str, playoffs: bool, year: int, advanced: bool):
     response: List[Tuple(str, DataFrame)] = []
 
     # Try to get data of first player, append (name, df) to response
@@ -89,8 +91,7 @@ def getResponse(
 
     # Return a list of PlayerResponse object which have the player name and redditified stats
     return [
-        PlayerResponse(player[0], dfToRedditTable(player[1]))
-        for player in response
+        PlayerResponse(player[0], dfToRedditTable(player[1])) for player in response
     ]
 
 
@@ -158,9 +159,7 @@ if __name__ == "__main__":
                 compare_name = " ".join(parsed_args.compare)
 
                 # Check input for validity, if not then reply
-                if not isValidInput(
-                    player_name, compare_name, parsed_args.year
-                ):
+                if not isValidInput(player_name, compare_name, parsed_args.year):
                     mention.reply(body="Invalid input.")
                     mention.mark_read()
                     continue
@@ -172,7 +171,7 @@ if __name__ == "__main__":
                         compare_name,
                         parsed_args.playoffs,
                         parsed_args.year,
-                        parsed_args.advanced
+                        parsed_args.advanced,
                     )
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}", exc_info=True)
@@ -184,5 +183,8 @@ if __name__ == "__main__":
                 try:
                     makeReply(response, mention)
                 except Exception as err:
-                    logger.warn(f"Error occurred while replying to comment: {err}", exc_info=True)
+                    logger.warn(
+                        f"Error occurred while replying to comment: {err}",
+                        exc_info=True,
+                    )
                 mention.mark_read()
