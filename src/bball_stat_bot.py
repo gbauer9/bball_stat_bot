@@ -18,6 +18,10 @@ class PlayerNotFound(Exception):
     pass
 
 
+class YearNotFound(Exception):
+    pass
+
+
 @dataclass
 class PlayerResponse:
     name: str
@@ -35,10 +39,15 @@ def dfToRedditTable(df: DataFrame):
     return df.to_csv(index=False, sep="|", line_terminator="\n")
 
 
-def getStatsWrapper(name: str, playoffs: bool, advanced: bool):
+def getStatsWrapper(name: str, playoffs: bool, advanced: bool, year: int):
     player_stats = get_stats(name, playoffs=playoffs, stat_type= "ADVANCED" if advanced else "PER_GAME")
+    if year:
+        season = f"{year-1}-{str(year)[-2:]}"
+        logger.info(f"SEASON: {season}")
+        player_stats = player_stats.loc[player_stats["SEASON"] == season]
+    
     if len(player_stats.index) == 0:
-        raise PlayerNotFound(f"No player found with given name: {name}")
+        raise PlayerNotFound(f"No player found with given name: {name} and season: {season}")
     return player_stats
 
 
@@ -49,8 +58,9 @@ def isValidInput(player_one: str, player_two: str, year: int):
     if player_one.lower() == player_two.lower():
         return False
 
-    if not (1947 <= year <= date.today().year):
-        return False
+    if year:
+        if not (1947 <= year <= date.today().year):
+            return False
 
     return True
 
@@ -62,7 +72,7 @@ def getResponse(
 
     # Try to get data of first player, append (name, df) to response
     try:
-        player_stats = getStatsWrapper(name, playoffs, advanced)
+        player_stats = getStatsWrapper(name, playoffs, advanced, year)
     except Exception:
         raise
 
@@ -71,7 +81,7 @@ def getResponse(
     # Try to get data of second player, append (name, df)
     if second_name:
         try:
-            compare_stats = getStatsWrapper(second_name, playoffs, advanced)
+            compare_stats = getStatsWrapper(second_name, playoffs, advanced, year)
         except Exception:
             raise
 
@@ -129,7 +139,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("name", type=str, nargs="+")
     parser.add_argument("-c", "--compare", type=str, nargs="+", default="")
-    parser.add_argument("-y", "--year", type=int, nargs="?", default=2022)
+    parser.add_argument("-y", "--year", type=int, nargs="?", const=2022, default=None)
     parser.add_argument("-p", "--playoffs", action="store_true")
     parser.add_argument("-a", "--advanced", action="store_true")
 
@@ -165,7 +175,7 @@ if __name__ == "__main__":
                         parsed_args.advanced
                     )
                 except Exception as err:
-                    logger.warn(f"Unable to generate response: {err}")
+                    logger.warn(f"Unable to generate response: {err}", exc_info=True)
                     mention.reply(body="Unable to find results one/both players.")
                     mention.mark_read()
                     continue
@@ -174,5 +184,5 @@ if __name__ == "__main__":
                 try:
                     makeReply(response, mention)
                 except Exception as err:
-                    logger.warn(f"Error occurred while replying to comment: {err}")
+                    logger.warn(f"Error occurred while replying to comment: {err}", exc_info=True)
                 mention.mark_read()
