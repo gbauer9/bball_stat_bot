@@ -43,14 +43,18 @@ def getStatsWrapper(name: str, playoffs: bool, advanced: bool, year: int):
     player_stats = get_stats(
         name, playoffs=playoffs, stat_type="ADVANCED" if advanced else "PER_GAME"
     )
+    if len(player_stats.index) == 0:
+        raise PlayerNotFound(
+            f"No player found with given name: {name}"
+        )
+
     if year:
         season = f"{year-1}-{str(year)[-2:]}"
-        logger.info(f"SEASON: {season}")
         player_stats = player_stats.loc[player_stats["SEASON"] == season]
 
     if len(player_stats.index) == 0:
-        raise PlayerNotFound(
-            f"No player found with given name: {name} and season: {season}"
+        raise YearNotFound(
+            f"Player {name} did not play in season {season}"
         )
     return player_stats
 
@@ -175,7 +179,7 @@ if __name__ == "__main__":
                     )
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}", exc_info=True)
-                    mention.reply(body="Unable to find results one/both players.")
+                    mention.reply(body="Unable to find results for one of or both players.")
                     mention.mark_read()
                     continue
 
