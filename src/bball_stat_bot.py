@@ -5,12 +5,10 @@ from typing import List, Tuple
 from basketball_reference_scraper.players import get_stats
 from datetime import date
 
+# TODO: UPDATE ALL TESTS
 # TODO: Put on AWS
 # TODO: Rename variables to make more sense
 # TODO: Create CI/CD pipeline
-# TODO: Add advanced stat lookup
-# TODO: Implement year selection logic and tests
-# TODO: Update tests for removal of stat selection/addition of advanced
 # TODO: Move all arg parsing into separate function
 
 
@@ -44,18 +42,14 @@ def getStatsWrapper(name: str, playoffs: bool, advanced: bool, year: int):
         name, playoffs=playoffs, stat_type="ADVANCED" if advanced else "PER_GAME"
     )
     if len(player_stats.index) == 0:
-        raise PlayerNotFound(
-            f"No player found with given name: {name}"
-        )
+        raise PlayerNotFound(f"No player found with given name: {name}")
 
     if year:
         season = f"{year-1}-{str(year)[-2:]}"
         player_stats = player_stats.loc[player_stats["SEASON"] == season]
 
     if len(player_stats.index) == 0:
-        raise YearNotFound(
-            f"Player {name} did not play in season {season}"
-        )
+        raise YearNotFound(f"Player {name} did not play in season {season}")
     return player_stats
 
 
@@ -179,7 +173,9 @@ if __name__ == "__main__":
                     )
                 except Exception as err:
                     logger.warn(f"Unable to generate response: {err}", exc_info=True)
-                    mention.reply(body="Unable to find results for one of or both players.")
+                    mention.reply(
+                        body="Unable to find results for one of or both players."
+                    )
                     mention.mark_read()
                     continue
 
