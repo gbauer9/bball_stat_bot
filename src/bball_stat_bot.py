@@ -37,7 +37,7 @@ def dfToRedditTable(df: DataFrame):
     return df.to_csv(index=False, sep="|", line_terminator="\n")
 
 
-def getStatsWrapper(name: str, playoffs: bool, advanced: bool, year: int):
+def getPlayerStats(name: str, playoffs: bool, advanced: bool, year: int):
     player_stats = get_stats(
         name, playoffs=playoffs, stat_type="ADVANCED" if advanced else "PER_GAME"
     )
@@ -72,7 +72,7 @@ def getResponse(name: str, second_name: str, playoffs: bool, year: int, advanced
 
     # Try to get data of first player, append (name, df) to response
     try:
-        player_stats = getStatsWrapper(name, playoffs, advanced, year)
+        player_stats = getPlayerStats(name, playoffs, advanced, year)
     except Exception:
         raise
 
@@ -81,7 +81,7 @@ def getResponse(name: str, second_name: str, playoffs: bool, year: int, advanced
     # Try to get data of second player, append (name, df)
     if second_name:
         try:
-            compare_stats = getStatsWrapper(second_name, playoffs, advanced, year)
+            compare_stats = getPlayerStats(second_name, playoffs, advanced, year)
         except Exception:
             raise
 
