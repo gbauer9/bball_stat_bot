@@ -9,7 +9,6 @@ from datetime import date
 # TODO: Put on AWS
 # TODO: Rename variables to make more sense
 # TODO: Create CI/CD pipeline
-# TODO: Move all arg parsing into separate function
 
 
 class PlayerNotFound(Exception):
@@ -68,29 +67,29 @@ def isValidInput(player_one: str, player_two: str, year: int):
 
 
 def getResponse(name: str, second_name: str, playoffs: bool, year: int, advanced: bool):
-    response: List[Tuple(str, DataFrame)] = []
+    response: List[PlayerResponse] = []
 
     # Try to get data of first player, append (name, df) to response
     try:
-        player_stats = getPlayerStats(name, playoffs, advanced, year)
+        player_stats = dfToRedditTable(getPlayerStats(name, playoffs, advanced, year))
     except Exception:
         raise
 
-    response.append((name, player_stats))
+    response.append(PlayerResponse(name, player_stats))
 
     # Try to get data of second player, append (name, df)
     if second_name:
         try:
-            compare_stats = getPlayerStats(second_name, playoffs, advanced, year)
+            compare_stats = dfToRedditTable(
+                getPlayerStats(second_name, playoffs, advanced, year)
+            )
         except Exception:
             raise
 
-        response.append((second_name, compare_stats))
+        response.append(PlayerResponse(second_name, compare_stats))
 
     # Return a list of PlayerResponse object which have the player name and redditified stats
-    return [
-        PlayerResponse(player[0], dfToRedditTable(player[1])) for player in response
-    ]
+    return response
 
 
 def makeReply(stats: List[PlayerResponse], comment: praw.models.Comment):
