@@ -1,1 +1,1 @@
-A Reddit bot for quickly grabbing NBA players' stats. Can search for one player or compare two, lookup specific stats (e.g. points, rebounds, steals, field goal percentage, etc.), and choose between regular season/playoffs. Looking to add functionality for advanced stats and team stats as well.
+A Reddit bot for quickly grabbing NBA players' stats. Can search for one player or compare two, choose between regular season or playoffs, and standard or advanced stats. Looking to add functionality for team stats in the future.
